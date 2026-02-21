@@ -1,9 +1,6 @@
 class LectorBiometrico:
-
-    def registrar(self):
-        """Devuelve un ID de huella"""
+    def capturar(self):
         raise NotImplementedError
 
-    def identificar(self):
-        """Devuelve ID de huella detectada"""
+    def identificar(self, huella):
         raise NotImplementedError

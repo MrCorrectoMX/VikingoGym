@@ -1,191 +1,151 @@
 import customtkinter as ctk
 
+from lector import capturar_huella, identificar_huella
+from database import registrar_socio, buscar_por_huella, registrar_asistencia
+from datetime import datetime
+
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-app = ctk.CTk()
-app.title("Vikingo Gym")
-app.geometry("900x520")
-app.resizable(False, False)
 
+class App(ctk.CTk):
 
-# TOP BAR 
-topbar = ctk.CTkFrame(app, height=60)
-topbar.pack(fill="x", side="top")
+    def __init__(self):
+        super().__init__()
 
-titulo = ctk.CTkLabel(topbar, text="Vikingo Gym Control", font=("Arial", 22, "bold"))
-titulo.pack(pady=15)
+        self.title("Vikingo Gym")
+        self.geometry("900x520")
+        self.resizable(False, False)
 
+        # ---------------- TOP BAR ----------------
+        topbar = ctk.CTkFrame(self, height=60)
+        topbar.pack(fill="x", side="top")
 
-# MAIN CONTAINER 
-container = ctk.CTkFrame(app)
-container.pack(fill="both", expand=True)
+        titulo = ctk.CTkLabel(topbar, text="Vikingo Gym Control", font=("Arial", 22, "bold"))
+        titulo.pack(pady=15)
 
+        # ---------------- MAIN CONTAINER ----------------
+        container = ctk.CTkFrame(self)
+        container.pack(fill="both", expand=True)
 
-# SIDE MENU 
-menu = ctk.CTkFrame(container, width=200)
-menu.pack(fill="y", side="left")
+        # ---------------- SIDE MENU ----------------
+        menu = ctk.CTkFrame(container, width=200)
+        menu.pack(fill="y", side="left")
 
+        # ---------------- WORK AREA ----------------
+        self.workspace = ctk.CTkFrame(container)
+        self.workspace.pack(fill="both", expand=True, side="right")
 
-# WORK AREA 
-workspace = ctk.CTkFrame(container)
-workspace.pack(fill="both", expand=True, side="right")
+        # ---------------- SCREENS ----------------
+        self.pantallas = {}
 
+        # Inicio
+        self.crear_inicio()
 
-# SCREENS 
-pantallas = {}
+        # Socios
+        self.crear_socios()
 
-def mostrar(nombre):
-    for p in pantallas.values():
-        p.pack_forget()
-    pantallas[nombre].pack(fill="both", expand=True)
+        # Accesos
+        self.crear_accesos()
 
+        # Menu botones
+        ctk.CTkButton(menu, text="Inicio", command=lambda: self.mostrar("inicio")).pack(pady=10, padx=10)
+        ctk.CTkButton(menu, text="Socios", command=lambda: self.mostrar("socios")).pack(pady=10, padx=10)
+        ctk.CTkButton(menu, text="Accesos", command=lambda: self.mostrar("accesos")).pack(pady=10, padx=10)
 
-# Pantalla inicio
-inicio = ctk.CTkFrame(workspace)
-lbl = ctk.CTkLabel(inicio, text="Bienvenido al sistema", font=("Arial", 24))
-lbl.pack(expand=True)
+        self.mostrar("inicio")
 
-pantallas["inicio"] = inicio
+    # ---------------- CAMBIAR PANTALLA ----------------
+    def mostrar(self, nombre):
+        for p in self.pantallas.values():
+            p.pack_forget()
+        self.pantallas[nombre].pack(fill="both", expand=True)
 
+    # ---------------- INICIO ----------------
+    def crear_inicio(self):
+        inicio = ctk.CTkFrame(self.workspace)
+        lbl = ctk.CTkLabel(inicio, text="Bienvenido al sistema", font=("Arial", 24))
+        lbl.pack(expand=True)
+        self.pantallas["inicio"] = inicio
 
-# Pantalla socios
-from database import crear_tablas, registrar_socio
-from biometrico_simulado import LectorSimulado
+    # ---------------- SOCIOS ----------------
+    def crear_socios(self):
+        socios = ctk.CTkFrame(self.workspace)
 
-crear_tablas()
-lector = LectorSimulado()
+        titulo = ctk.CTkLabel(socios, text="Registro de Socio", font=("Arial", 22))
+        titulo.pack(pady=20)
 
-socios = ctk.CTkFrame(workspace)
+        self.nombre = ctk.CTkEntry(socios, placeholder_text="Nombre completo", width=300)
+        self.nombre.pack(pady=5)
 
-titulo_socios = ctk.CTkLabel(socios, text="Registro de Socio", font=("Arial", 22))
-titulo_socios.pack(pady=20)
+        self.telefono = ctk.CTkEntry(socios, placeholder_text="Teléfono", width=300)
+        self.telefono.pack(pady=5)
 
-nombre = ctk.CTkEntry(socios, placeholder_text="Nombre completo", width=300)
-nombre.pack(pady=5)
+        self.vencimiento = ctk.CTkEntry(socios, placeholder_text="Fecha vencimiento (YYYY-MM-DD)", width=300)
+        self.vencimiento.pack(pady=5)
 
-telefono = ctk.CTkEntry(socios, placeholder_text="Teléfono", width=300)
-telefono.pack(pady=5)
+        self.estado = ctk.CTkLabel(socios, text="")
+        self.estado.pack(pady=10)
 
-vencimiento = ctk.CTkEntry(socios, placeholder_text="Fecha vencimiento (YYYY-MM-DD)", width=300)
-vencimiento.pack(pady=5)
+        btn_guardar = ctk.CTkButton(socios, text="Registrar socio", command=self.registrar_click)
+        btn_guardar.pack(pady=20)
 
-estado = ctk.CTkLabel(socios, text="")
-estado.pack(pady=10)
+        self.pantallas["socios"] = socios
 
+    def registrar_click(self):
+        nombre = self.nombre.get()
+        telefono = self.telefono.get()
+        venc = self.vencimiento.get()
 
-def registrar():
-    n = nombre.get()
-    t = telefono.get()
-    v = vencimiento.get()
+        if not nombre or not venc:
+            self.estado.configure(text="Faltan datos", text_color="red")
+            return
 
-    if not n or not v:
-        estado.configure(text="Faltan datos", text_color="red")
-        return
+        self.estado.configure(text="Coloque la huella...")
+        self.update()
 
-    estado.configure(text="Escanee la huella...")
-    huella = lector.registrar()
+        huella = capturar_huella()
 
-    registrar_socio(n, t, v, huella)
+        registrar_socio(nombre, telefono, venc, huella)
 
-    estado.configure(text=f"Socio registrado | ID Huella: {huella}", text_color="green")
+        self.estado.configure(text=f"Socio registrado | ID {huella[:8]}", text_color="green")
 
-    nombre.delete(0, "end")
-    telefono.delete(0, "end")
-    vencimiento.delete(0, "end")
+        self.nombre.delete(0, "end")
+        self.telefono.delete(0, "end")
+        self.vencimiento.delete(0, "end")
 
+    # ---------------- ACCESOS ----------------
+    def crear_accesos(self):
+        accesos = ctk.CTkFrame(self.workspace)
 
-btn_guardar = ctk.CTkButton(socios, text="Registrar socio", command=registrar)
-btn_guardar.pack(pady=20)
+        titulo = ctk.CTkLabel(accesos, text="Control de Acceso", font=("Arial", 22))
+        titulo.pack(pady=20)
 
-from database import obtener_socios, actualizar_vencimiento
+        self.mensaje = ctk.CTkLabel(accesos, text="Coloque su dedo en el lector", font=("Arial", 18))
+        self.mensaje.pack(pady=20)
 
-lista_frame = ctk.CTkFrame(socios)
-lista_frame.pack(pady=20, fill="both", expand=True)
+        btn_scan = ctk.CTkButton(accesos, text="Escanear huella", command=self.scan_click, height=50, width=200)
+        btn_scan.pack(pady=40)
 
-lista = ctk.CTkTextbox(lista_frame, height=150)
-lista.pack(fill="both", expand=True, padx=10, pady=10)
+        self.pantallas["accesos"] = accesos
 
-seleccion = ctk.CTkEntry(socios, placeholder_text="ID del socio a renovar")
-seleccion.pack(pady=5)
+    def scan_click(self):
+        self.mensaje.configure(text="Escaneando...")
+        self.update()
 
-nueva_fecha = ctk.CTkEntry(socios, placeholder_text="Nueva fecha (YYYY-MM-DD)")
-nueva_fecha.pack(pady=5)
+        huella = identificar_huella()
+        socio = buscar_por_huella(huella)
 
+        if not socio:
+            self.mensaje.configure(text="No registrado", text_color="red")
+            return
 
-def cargar_socios():
-    lista.delete("1.0", "end")
-    for s in obtener_socios():
-        lista.insert("end", f"ID:{s[0]} | {s[1]} | {s[2]} | vence:{s[3]}\n")
+        venc = datetime.strptime(socio[2], "%Y-%m-%d")
 
+        if venc < datetime.now():
+            self.mensaje.configure(text=f"{socio[1]} | Membresía vencida", text_color="orange")
+            return
 
-def renovar():
-    try:
-        actualizar_vencimiento(seleccion.get(), nueva_fecha.get())
-        estado.configure(text="Membresía actualizada", text_color="green")
-        cargar_socios()
-    except:
-        estado.configure(text="Error al actualizar", text_color="red")
+        registrar_asistencia(socio[0], datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-
-btn_lista = ctk.CTkButton(socios, text="Mostrar socios", command=cargar_socios)
-btn_lista.pack(pady=5)
-
-btn_renovar = ctk.CTkButton(socios, text="Renovar membresía", command=renovar)
-btn_renovar.pack(pady=10)
-
-
-
-pantallas["socios"] = socios
-
-
-# Pantalla accesos
-from database import buscar_por_huella, registrar_asistencia
-from datetime import datetime
-
-accesos = ctk.CTkFrame(workspace)
-
-titulo_acc = ctk.CTkLabel(accesos, text="Control de Acceso", font=("Arial", 22))
-titulo_acc.pack(pady=20)
-
-mensaje = ctk.CTkLabel(accesos, text="Coloque su dedo en el lector", font=("Arial", 18))
-mensaje.pack(pady=20)
-
-
-def escanear():
-    mensaje.configure(text="Escaneando huella...")
-
-    huella = lector.identificar()
-
-    socio = buscar_por_huella(huella)
-
-    if not socio:
-        mensaje.configure(text="Socio no registrado", text_color="red")
-        return
-
-    venc = datetime.strptime(socio[2], "%Y-%m-%d")
-
-    if venc < datetime.now():
-        mensaje.configure(text=f"{socio[1]} - Membresía vencida", text_color="orange")
-        return
-
-    registrar_asistencia(socio[0])
-    mensaje.configure(text=f"Bienvenido {socio[1]}", text_color="green")
-
-
-btn_scan = ctk.CTkButton(accesos, text="Escanear huella", command=escanear, height=50, width=200)
-btn_scan.pack(pady=40)
-
-
-pantallas["accesos"] = accesos
-
-
-# MENU BUTTONS 
-ctk.CTkButton(menu, text="Inicio", command=lambda: mostrar("inicio")).pack(pady=10, padx=10)
-ctk.CTkButton(menu, text="Socios", command=lambda: mostrar("socios")).pack(pady=10, padx=10)
-ctk.CTkButton(menu, text="Accesos", command=lambda: mostrar("accesos")).pack(pady=10, padx=10)
-
-
-mostrar("inicio")
-
-app.mainloop()
+        self.mensaje.configure(text=f"Bienvenido {socio[1]}", text_color="green")

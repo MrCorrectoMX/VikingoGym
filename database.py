@@ -12,10 +12,10 @@ def crear_tablas():
     c.execute("""
     CREATE TABLE IF NOT EXISTS socios(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
+        nombre TEXT,
         telefono TEXT,
-        vencimiento TEXT NOT NULL,
-        huella_id TEXT UNIQUE
+        vencimiento TEXT,
+        huella TEXT UNIQUE
     )
     """)
 
@@ -34,44 +34,30 @@ def crear_tablas():
 def registrar_socio(nombre, telefono, vencimiento, huella):
     db = conectar()
     c = db.cursor()
-    c.execute(
-        "INSERT INTO socios(nombre,telefono,vencimiento,huella_id) VALUES(?,?,?,?)",
-        (nombre, telefono, vencimiento, huella)
-    )
+
+    c.execute("INSERT INTO socios(nombre,telefono,vencimiento,huella) VALUES(?,?,?,?)",
+              (nombre, telefono, vencimiento, huella))
+
     db.commit()
     db.close()
 
-from datetime import datetime
 
 def buscar_por_huella(huella):
     db = conectar()
     c = db.cursor()
-    c.execute("SELECT id,nombre,vencimiento FROM socios WHERE huella_id=?", (huella,))
-    socio = c.fetchone()
-    db.close()
-    return socio
 
-def registrar_asistencia(socio_id):
+    c.execute("SELECT id,nombre,vencimiento FROM socios WHERE huella=?", (huella,))
+    dato = c.fetchone()
+
+    db.close()
+    return dato
+
+
+def registrar_asistencia(socio_id, fecha):
     db = conectar()
     c = db.cursor()
-    c.execute("INSERT INTO asistencias(socio_id,fecha) VALUES(?,?)",
-              (socio_id, datetime.now()))
-    db.commit()
-    db.close()
 
+    c.execute("INSERT INTO asistencias(socio_id,fecha) VALUES(?,?)", (socio_id, fecha))
 
-def obtener_socios():
-    db = conectar()
-    c = db.cursor()
-    c.execute("SELECT id,nombre,telefono,vencimiento FROM socios ORDER BY nombre")
-    datos = c.fetchall()
-    db.close()
-    return datos
-
-
-def actualizar_vencimiento(socio_id, nueva_fecha):
-    db = conectar()
-    c = db.cursor()
-    c.execute("UPDATE socios SET vencimiento=? WHERE id=?", (nueva_fecha, socio_id))
     db.commit()
     db.close()

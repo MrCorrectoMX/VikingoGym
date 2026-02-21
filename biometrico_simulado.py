@@ -1,12 +1,10 @@
-import random
 from biometrico import LectorBiometrico
+import random
 
 class LectorSimulado(LectorBiometrico):
 
-    def registrar(self):
-        print("Simulando registro de huella...")
-        return "H" + str(random.randint(1000,9999))
+    def capturar(self):
+        return str(random.randint(1000, 9999))
 
-    def identificar(self):
-        print("Simulando lectura de huella...")
-        return input("Escribe el ID de huella: ")
+    def identificar(self, huella):
+        return huella
