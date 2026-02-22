@@ -1,9 +1,15 @@
+import sys
 from database import crear_tablas
 from ui import App
+from error_reporter import enviar_error
 
-# preparar base de datos
+def manejar_excepciones(tipo, valor, tb):
+    enviar_error(valor, tb)
+    sys.__excepthook__(tipo, valor, tb)
+
+sys.excepthook = manejar_excepciones
+
 crear_tablas()
 
-# iniciar interfaz
 app = App()
-app.mainloop()  
+app.mainloop()

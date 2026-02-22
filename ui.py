@@ -1,5 +1,5 @@
 import customtkinter as ctk
-
+from error_reporter import enviar_error
 from lector import capturar_huella, identificar_huella
 from database import registrar_socio, buscar_por_huella, registrar_asistencia
 from datetime import datetime
@@ -149,3 +149,7 @@ class App(ctk.CTk):
         registrar_asistencia(socio[0], datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         self.mensaje.configure(text=f"Bienvenido {socio[1]}", text_color="green")
+
+    def report_callback_exception(self, exc, val, tb):
+        enviar_error(val, tb)
+        print("Error en interfaz:", val)
